@@ -258,7 +258,8 @@ async fn main() -> anyhow::Result<()> {
 
     let pool = prepare_db().await?;
     let state = web::Data::new(State::new(pool, config));
-    Ok(HttpServer::new(move || {
+    let state2 = state.clone();
+    HttpServer::new(move || {
         let eval = expr::Eval::new();
         App::new()
             .wrap(Logger::default())
@@ -272,5 +273,8 @@ async fn main() -> anyhow::Result<()> {
     })
     .bind(("127.0.0.1", 8000))?
     .run()
-    .await?)
+    .await?;
+    state2.db.close().await;
+    info!("Quitting");
+    Ok(())
 }
