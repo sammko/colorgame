@@ -1,0 +1,8 @@
+{
+  "stations": {
+    "1": {
+      "red": "blue",
+      "blue": "red"
+    }
+  }
+}
