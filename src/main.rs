@@ -185,7 +185,8 @@ async fn event_handler(
 }
 
 async fn prepare_db() -> anyhow::Result<DbPool> {
-    let opt = SqliteConnectOptions::from_str("sqlite://data.db")?.create_if_missing(true);
+    let dbpath = std::env::var("DATABASE_URL").context("Env DATABASE_URL is not set")?;
+    let opt = SqliteConnectOptions::from_str(&dbpath)?.create_if_missing(true);
     let pool = SqlitePool::connect_with(opt).await?;
     migrate!().run(&pool).await?;
     info!("Database ready");
@@ -199,6 +200,7 @@ struct Config {
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
+    dotenv::dotenv()?;
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     let config: Config = serde_json::from_str(
