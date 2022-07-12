@@ -201,9 +201,6 @@ struct Config {
 async fn main() -> anyhow::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    // let config: Config =
-    //     toml::from_str(&std::fs::read_to_string("config.toml").context("Can't read config.toml")?)?;
-
     let config: Config = serde_json::from_str(
         &std::fs::read_to_string("config.json").context("Can't read config.json")?,
     )?;
