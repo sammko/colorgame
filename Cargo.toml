@@ -13,3 +13,4 @@ serde = { version = "1", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 rhai = "1"
 toml = "0.5.9"
+actix-cors = "0.6.1"

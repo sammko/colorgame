@@ -4,6 +4,7 @@ use actix_web::{
     middleware::Logger,
     post, web, App, HttpServer, Responder,
 };
+use actix_cors::Cors;
 use anyhow::Context;
 use chrono::{DateTime, Utc};
 use log::info;
@@ -263,6 +264,7 @@ async fn main() -> anyhow::Result<()> {
         let eval = expr::Eval::new();
         App::new()
             .wrap(Logger::default())
+            .wrap(Cors::default().allow_any_origin())
             .app_data(state.clone())
             .app_data(web::Data::new(RefCell::new(eval)))
             .service(events_handler)
