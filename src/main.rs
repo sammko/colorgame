@@ -1,16 +1,15 @@
+use actix_cors::Cors;
 use actix_web::{
     error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound, Result},
     get,
     middleware::Logger,
     post, web, App, HttpServer, Responder,
 };
-use actix_cors::Cors;
 use anyhow::Context;
 use chrono::{DateTime, Utc};
 use log::info;
 use serde::{Deserialize, Serialize};
 use sqlx::{migrate, sqlite::SqliteConnectOptions, Pool, Sqlite, SqlitePool};
-use std::cell::RefCell;
 use std::{collections::HashMap, str::FromStr};
 
 type DbPool = Pool<Sqlite>;
@@ -31,7 +30,7 @@ struct Event {
     barcode: String,
     station: Option<i64>,
     timestamp: DateTime<Utc>,
-    newcolor: u32,
+    newcolor: String,
 }
 
 #[derive(Deserialize)]
@@ -43,61 +42,8 @@ struct NewEvent {
 #[derive(Deserialize)]
 struct Init {
     barcode: String,
-    color: u32,
+    color: String,
     timestamp: DateTime<Utc>,
-}
-
-mod expr {
-    use anyhow::{anyhow, Result};
-    use rhai::{
-        packages::{CorePackage, Package},
-        Engine, Scope, INT,
-    };
-
-    #[derive(Clone, Debug)]
-    struct Color {
-        r: u8,
-        g: u8,
-        b: u8,
-    }
-
-    impl Color {
-        fn new(r: INT, g: INT, b: INT) -> Self {
-            Self {
-                r: r as u8,
-                g: g as u8,
-                b: b as u8,
-            }
-        }
-    }
-
-    pub struct Eval {
-        engine: Engine,
-    }
-
-    impl Eval {
-        pub fn new() -> Self {
-            let mut engine = Engine::new_raw();
-            let package = CorePackage::new();
-            engine.register_global_module(package.as_shared_module());
-            engine
-                .register_type::<Color>()
-                .register_fn("rgb", Color::new);
-            Self { engine }
-        }
-
-        pub fn eval(&mut self, color: u32, expr: &str) -> Result<u32> {
-            let mut scope = Scope::new();
-            scope.push("r", (color >> 16 & 0xff) as i64);
-            scope.push("g", (color >> 8 & 0xff) as i64);
-            scope.push("b", (color & 0xff) as i64);
-            let color: Color = self
-                .engine
-                .eval_expression_with_scope(&mut scope, expr)
-                .map_err(|e| anyhow!(format!("{}", e)))?;
-            Ok(((color.r as u32) << 16) + ((color.g as u32) << 8) + (color.b as u32))
-        }
-    }
 }
 
 #[get("/events")]
@@ -183,7 +129,6 @@ async fn init_handler(state: web::Data<State>, init: web::Json<Init>) -> Result<
 #[post("/event")]
 async fn event_handler(
     state: web::Data<State>,
-    eval: web::Data<RefCell<expr::Eval>>,
     event: web::Json<NewEvent>,
 ) -> Result<impl Responder> {
     let mut txn = state
@@ -197,18 +142,20 @@ async fn event_handler(
         .await
         .map_err(|e| ErrorInternalServerError(e))?
         .ok_or(ErrorNotFound("Barcode does not exist"))?;
-    let current = current as u32;
 
-    let expression = state
+    let color_map = state
         .config
         .stations
         .get(&event.station.to_string())
         .ok_or(ErrorBadRequest("Station invalid"))?;
 
-    let newcolor = eval
-        .borrow_mut()
-        .eval(current, expression)
-        .map_err(|e| ErrorInternalServerError(format!("Failed to compute new color: {}", e)))?;
+    let newcolor = color_map
+        .get(&current)
+        .ok_or(ErrorInternalServerError("Current color not in map"))?;
+    // let newcolor = eval
+    //     .borrow_mut()
+    //     .eval(current, expression)
+    //     .map_err(|e| ErrorInternalServerError(format!("Failed to compute new color: {}", e)))?;
 
     let now = Utc::now();
     sqlx::query!(
@@ -247,26 +194,28 @@ async fn prepare_db() -> anyhow::Result<DbPool> {
 
 #[derive(Deserialize, Debug)]
 struct Config {
-    stations: HashMap<String, String>,
+    stations: HashMap<String, HashMap<String, String>>,
 }
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    let config: Config =
-        toml::from_str(&std::fs::read_to_string("config.toml").context("Can't read config.toml")?)?;
+    // let config: Config =
+    //     toml::from_str(&std::fs::read_to_string("config.toml").context("Can't read config.toml")?)?;
+
+    let config: Config = serde_json::from_str(
+        &std::fs::read_to_string("config.json").context("Can't read config.json")?,
+    )?;
 
     let pool = prepare_db().await?;
     let state = web::Data::new(State::new(pool, config));
     let state2 = state.clone();
     HttpServer::new(move || {
-        let eval = expr::Eval::new();
         App::new()
             .wrap(Logger::default())
             .wrap(Cors::default().allow_any_origin())
             .app_data(state.clone())
-            .app_data(web::Data::new(RefCell::new(eval)))
             .service(events_handler)
             .service(current_handler)
             .service(event_handler)

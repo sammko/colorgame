@@ -12,5 +12,5 @@ sqlx = { version = "0.5", features = [ "runtime-actix-native-tls", "sqlite", "ch
 serde = { version = "1", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 rhai = "1"
-toml = "0.5.9"
 actix-cors = "0.6.1"
+serde_json = "1.0.82"
