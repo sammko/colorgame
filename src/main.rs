@@ -213,7 +213,7 @@ async fn main() -> anyhow::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .wrap(Cors::default().allow_any_origin())
+            .wrap(Cors::permissive())
             .app_data(state.clone())
             .service(events_handler)
             .service(current_handler)
