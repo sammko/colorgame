@@ -9,7 +9,7 @@ use anyhow::Context;
 use chrono::{DateTime, Utc};
 use log::info;
 use serde::{Deserialize, Serialize};
-use sqlx::{migrate, sqlite::SqliteConnectOptions, Pool, Sqlite, SqlitePool};
+use sqlx::{migrate, sqlite::{SqliteConnectOptions, SqlitePoolOptions}, Pool, Sqlite};
 use std::{collections::HashMap, str::FromStr};
 
 type DbPool = Pool<Sqlite>;
@@ -187,7 +187,7 @@ async fn event_handler(
 async fn prepare_db() -> anyhow::Result<DbPool> {
     let dbpath = std::env::var("DATABASE_URL").context("Env DATABASE_URL is not set")?;
     let opt = SqliteConnectOptions::from_str(&dbpath)?.create_if_missing(true);
-    let pool = SqlitePool::connect_with(opt).await?;
+    let pool = SqlitePoolOptions::new().max_connections(1).connect_with(opt).await?;
     migrate!().run(&pool).await?;
     info!("Database ready");
     Ok(pool)
