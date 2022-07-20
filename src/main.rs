@@ -150,7 +150,7 @@ async fn event_handler(
     let color_map = state
         .config
         .stations
-        .get(&event.station.to_string())
+        .get(&event.station)
         .ok_or(ErrorBadRequest("Station invalid"))?;
 
     let newcolor = color_map
@@ -200,7 +200,7 @@ async fn prepare_db() -> anyhow::Result<DbPool> {
 
 #[derive(Deserialize, Debug)]
 struct Config {
-    stations: HashMap<String, HashMap<String, String>>,
+    stations: HashMap<i64, HashMap<String, String>>,
 }
 
 #[actix_web::main]
