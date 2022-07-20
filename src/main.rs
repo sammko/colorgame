@@ -137,11 +137,15 @@ async fn event_handler(
         .await
         .map_err(|e| ErrorInternalServerError(e))?;
 
-    let current = sqlx::query_scalar!(r#"SELECT color FROM color WHERE barcode=?1"#, event.barcode)
+    let current = sqlx::query!(r#"SELECT color,station FROM color WHERE barcode=?1"#, event.barcode)
         .fetch_optional(&mut txn)
         .await
         .map_err(|e| ErrorInternalServerError(e))?
         .ok_or(ErrorNotFound("Barcode does not exist"))?;
+    
+    if current.station == Some(event.station) {
+        return Err(ErrorBadRequest("Cannot visit same station immediately"))
+    }
 
     let color_map = state
         .config
@@ -150,7 +154,7 @@ async fn event_handler(
         .ok_or(ErrorBadRequest("Station invalid"))?;
 
     let newcolor = color_map
-        .get(&current)
+        .get(&current.color)
         .ok_or(ErrorInternalServerError("Current color not in map"))?;
     // let newcolor = eval
     //     .borrow_mut()
@@ -170,8 +174,9 @@ async fn event_handler(
     .map_err(|e| ErrorInternalServerError(e))?;
 
     sqlx::query!(
-        "INSERT INTO color (barcode, color) VALUES (?1, ?2) ON CONFLICT(barcode) DO UPDATE SET color=excluded.color",
+        "INSERT INTO color (barcode, station, color) VALUES (?1, ?2, ?3) ON CONFLICT(barcode) DO UPDATE SET color=excluded.color, station=excluded.station",
         event.barcode,
+        event.station,
         newcolor,
     )
     .execute(&mut txn)

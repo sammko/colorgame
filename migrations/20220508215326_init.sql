@@ -9,5 +9,6 @@ create index idx_event_1 on event(barcode, timestamp desc);
 
 create table color (
     barcode    TEXT PRIMARY KEY NOT NULL,
+    station    INTEGER,
     color      TEXT NOT NULL
 );
