@@ -9,7 +9,11 @@ use anyhow::Context;
 use chrono::{DateTime, Utc};
 use log::info;
 use serde::{Deserialize, Serialize};
-use sqlx::{migrate, sqlite::{SqliteConnectOptions, SqlitePoolOptions}, Pool, Sqlite};
+use sqlx::{
+    migrate,
+    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
+    Pool, Sqlite,
+};
 use std::{collections::HashMap, str::FromStr};
 
 type DbPool = Pool<Sqlite>;
@@ -147,19 +151,35 @@ async fn event_handler(
         return Err(ErrorBadRequest("Cannot visit same station immediately"))
     }
 
-    let color_map = state
+    let station_def = state
         .config
         .stations
         .get(&event.station)
         .ok_or(ErrorBadRequest("Station invalid"))?;
 
-    let newcolor = color_map
-        .get(&current.color)
-        .ok_or(ErrorInternalServerError("Current color not in map"))?;
-    // let newcolor = eval
-    //     .borrow_mut()
-    //     .eval(current, expression)
-    //     .map_err(|e| ErrorInternalServerError(format!("Failed to compute new color: {}", e)))?;
+    let newcolor = match station_def {
+        StationDefinition::Function(map) => map.get(&current.color).ok_or(
+            ErrorInternalServerError("Bad config: Current color not in map"),
+        )?,
+        StationDefinition::Cycle(cycle) => {
+            let idx: usize = sqlx::query_scalar!(
+                r#"SELECT last_index FROM cycle_state WHERE station=?1"#,
+                event.station
+            )
+            .fetch_optional(&mut txn)
+            .await
+            .map_err(|e| ErrorInternalServerError(e))?
+            .unwrap_or(0)
+            .try_into()
+            .map_err(|e| ErrorInternalServerError(e))?;
+            let newcolor = cycle
+                .get(idx)
+                .ok_or(ErrorInternalServerError("Cycle state out of bounds"))?;
+            let idx = ((idx + 1) % cycle.len()) as u32;
+            sqlx::query!(r#"INSERT INTO cycle_state (station, last_index) VALUES (?1, ?2) ON CONFLICT(station) DO UPDATE SET last_index=excluded.last_index"#, event.station, idx).execute(&mut txn).await.map_err(|e| ErrorInternalServerError(e))?;
+            newcolor
+        }
+    };
 
     let now = Utc::now();
     sqlx::query!(
@@ -192,15 +212,25 @@ async fn event_handler(
 async fn prepare_db() -> anyhow::Result<DbPool> {
     let dbpath = std::env::var("DATABASE_URL").context("Env DATABASE_URL is not set")?;
     let opt = SqliteConnectOptions::from_str(&dbpath)?.create_if_missing(true);
-    let pool = SqlitePoolOptions::new().max_connections(1).connect_with(opt).await?;
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect_with(opt)
+        .await?;
     migrate!().run(&pool).await?;
     info!("Database ready");
     Ok(pool)
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(untagged)]
+enum StationDefinition {
+    Function(HashMap<String, String>),
+    Cycle(Vec<String>),
+}
+
+#[derive(Deserialize, Debug)]
 struct Config {
-    stations: HashMap<i64, HashMap<String, String>>,
+    stations: HashMap<i64, StationDefinition>,
 }
 
 #[actix_web::main]

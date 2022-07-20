@@ -2,7 +2,14 @@
   "stations": {
     "1": {
       "red": "blue",
+      "green": "green",
       "blue": "red"
-    }
+    },
+    "2": {
+      "red": "green",
+      "green": "green",
+      "blue": "green"
+    },
+    "3": ["red", "blue", "green"]
   }
 }
