@@ -141,14 +141,17 @@ async fn event_handler(
         .await
         .map_err(|e| ErrorInternalServerError(e))?;
 
-    let current = sqlx::query!(r#"SELECT color,station FROM color WHERE barcode=?1"#, event.barcode)
-        .fetch_optional(&mut txn)
-        .await
-        .map_err(|e| ErrorInternalServerError(e))?
-        .ok_or(ErrorNotFound("Barcode does not exist"))?;
-    
+    let current = sqlx::query!(
+        r#"SELECT color,station FROM color WHERE barcode=?1"#,
+        event.barcode
+    )
+    .fetch_optional(&mut txn)
+    .await
+    .map_err(|e| ErrorInternalServerError(e))?
+    .ok_or(ErrorNotFound("Barcode does not exist"))?;
+
     if current.station == Some(event.station) {
-        return Err(ErrorBadRequest("Cannot visit same station immediately"))
+        return Err(ErrorBadRequest("Cannot visit same station immediately"));
     }
 
     let station_def = state
