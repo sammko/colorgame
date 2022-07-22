@@ -16,7 +16,7 @@
       <p id="as_text"></p>
     </div>
     <div class="col-6">
-      <p id="round" class="round">kolo 0</p>
+      <p id="round" class="round">0. kolo</p>
       <p id="timer" class="timer">00:00</p>
     </div>
   </div>
@@ -203,7 +203,7 @@
     }
 
     zahlasKolo(x);
-    document.getElementById("round").innerHTML = "kolo " + x;
+    document.getElementById("round").innerHTML = x + ". kolo";
     document.getElementById("as_header").innerHTML = assignments[x][0];
     document.getElementById("as_text").innerHTML = assignments[x][1];
     if( assignments[x][2] != "")
