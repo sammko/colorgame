@@ -42,37 +42,26 @@ function clear_tables()
   }
 }
 
-function load_state()
+async function load_state()
 {
-  let req = new XMLHttpRequest();
-  req.open("GET", "http://localhost:8000/current");
-  req.send();
-  req.onreadystatechange = () =>
-  {
-    if(req.readyState === XMLHttpRequest.DONE)
-    {
-      if(req.status === 200)
-      {
-        const response = JSON.parse(req.response);
-        clear_tables();
-        for(let key in response)
-        {
-          let table = document.getElementById("barcode-colors-table"+(parseInt((key-1)/8+1)).toString());
-          let row = $e('tr', '', table.firstChild);
-          let bar = $e('td', 'barcode', row);
-          bar.innerHTML = key;
-          let wrapper = $e('td', 'wrap', row)
-          let color = $e('div', response[key], wrapper);
-          color.classList += ' color_square'
-        }
-        return response;
-      }
-      else
-      {
-        console.log("error" + req.status + " " + req.statusText)
-        return null;
-      }
+  const response = await fetch("http://localhost:8000/current");
+  if (!response.ok) {
+    throw new Error(`Error fetching current state: ${response.status} - ${response.statusText}`)
+  } else {
+    let data = await response.json();
+    clear_tables();
+    let empty = true;
+    for (const [key, value] of Object.entries(data)) {
+      let table = document.getElementById("barcode-colors-table"+(parseInt((key-1)/8+1)).toString());
+      let row = $e('tr', '', table.firstChild);
+      let bar = $e('td', 'barcode', row);
+      bar.innerHTML = key;
+      let wrapper = $e('td', 'wrap', row)
+      let color = $e('div', value, wrapper);
+      color.classList += ' color_square'
+      empty = false;
     }
+    return empty;
   }
 }
 
@@ -156,7 +145,12 @@ function spustiKolo(x)
   end_time = start_time + 1000*(rounds[x]*60);
 }
 
-load_state()
-//create_barcodes(48);
+load_state().then(empty => {
+  if (empty) {
+    create_barcodes(48);
+    load_state()
+  }
+})
+
 var timeUpdater = setInterval(update_timer, 100);
 var stateUpdater = setInterval(load_state, 1000);
