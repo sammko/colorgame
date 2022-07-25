@@ -1,0 +1,14 @@
+{
+  "devDependencies": {
+    "esbuild": "^0.14.50"
+  },
+  "dependencies": {
+    "moment": "^2.29.4"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "esbuild --bundle colorgame.js --outdir=www/js",
+    "serve": "esbuild --serve=127.0.0.1:8080 --servedir=www",
+    "clean": "rm -r www/js"
+  }
+}
