@@ -116,7 +116,7 @@ function zahlasKolo(x) {
   if(x == 0)
     finalnyZoznam.push("0");
   else {
-    zoznam = [100,90,80,70,60,50,40,30,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1];
+    let zoznam = [100,90,80,70,60,50,40,30,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1];
     zoznam.forEach((a)=> {if(x>=a) {finalnyZoznam.push(""+a); x-=a;}});
   }
 

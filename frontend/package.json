@@ -1,6 +1,7 @@
 {
   "devDependencies": {
-    "esbuild": "^0.14.50"
+    "esbuild": "^0.14.50",
+    "eslint": "^8.20.0"
   },
   "dependencies": {
     "moment": "^2.29.4"
