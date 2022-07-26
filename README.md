@@ -1,6 +1,7 @@
 Usage
 ---
 
+The first thing that has to be done is installation of `sqlx`. This is done by running `cargo install sqlx-cli`.
 The `sqlx` crate requires access to the database at compilation time, so create
 one before running `cargo build`. A script ([example.sh](./example.sh)) is
 provided which creates and migrates
@@ -16,6 +17,7 @@ respected.
 
 Summary:
 
+- `cargo install sqlx-cli`
 - `./example.sh` (create config and database)
 - `cargo build`
 - `cargo run`
