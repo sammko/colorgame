@@ -4,7 +4,7 @@
     "eslint": "^8.20.0"
   },
   "dependencies": {
-    "moment": "^2.29.4"
+    "luxon": "^3.0.1"
   },
   "license": "MIT",
   "scripts": {

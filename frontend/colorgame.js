@@ -1,11 +1,24 @@
-import moment from 'moment';
+import { DateTime } from 'luxon';
 
-const rounds = [10, 8, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4, 3.5, 3];
-//const rounds = [0.05,0.05,0.05,0.05,0.05,0.05];
-var start_time = moment();
-var round_number = 0;
-var end_time = start_time;
+//const rounds = [10, 8, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4, 3.5, 3];
+const rounds = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
 
+// TODO make this a parameter?
+const gameStart = DateTime.fromISO("2022-07-27T01:08:30+03:00");
+let currentRound = 0;
+const roundEnds = [];
+
+{
+  const now = DateTime.now();
+  let sum = 0;
+  for (let i = 0; i < rounds.length; i++) {
+    const length = rounds[i];
+    sum += length;
+    let t = gameStart.plus({ minutes: sum });
+    roundEnds.push(t);
+    if (now > t) currentRound = i + 1;
+  }
+}
 
 const assignments =
 {
@@ -81,17 +94,13 @@ function create_barcodes(n = 1) {
   }
 }
 
-function parse_time(seconds) {
-  var mins = parseInt(seconds / 60);
-  var secs = seconds % 60;
-  return (mins < 10 ? "0" : "") + mins.toString() + ":" + (secs < 10 ? "0" : "") + parseInt(secs);
-}
-
 function update_timer() {
-  document.getElementById("timer").innerHTML = parse_time((end_time - moment()) / 1000)
-  if ((end_time - moment() < 0)) {
-    spustiKolo(round_number);
-    round_number++;
+  const currentRoundEnd = roundEnds[currentRound];
+  if (DateTime.now() > currentRoundEnd) {
+    currentRound++;
+    spustiKolo(currentRound);
+  } else {
+    document.getElementById("timer").innerHTML = currentRoundEnd.diff(DateTime.now()).toFormat("mm:ss")
   }
 }
 
@@ -122,6 +131,7 @@ function spustiKolo(x) {
   if (x >= rounds.length) {
     clearInterval(timeUpdater);
     clearInterval(stateUpdater);
+    document.getElementById("round").innerHTML = "Koniec hry";
     return;
   }
 
@@ -133,8 +143,6 @@ function spustiKolo(x) {
     document.getElementById("as_img").src = "assignments/" + assignments[x][2];
   else
     document.getElementById("as_img").src = "";
-  start_time = moment();
-  end_time = start_time + 1000 * (rounds[x] * 60);
 }
 
 load_state().then(empty => {
@@ -143,6 +151,8 @@ load_state().then(empty => {
     load_state()
   }
 })
+
+spustiKolo(currentRound);
 
 var timeUpdater = setInterval(update_timer, 100);
 var stateUpdater = setInterval(load_state, 1000);
