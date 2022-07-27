@@ -212,6 +212,36 @@ async fn event_handler(
     Ok("OK")
 }
 
+#[post("/reset")]
+async fn reset_handler(state: web::Data<State>) -> Result<impl Responder> {
+    let mut txn = state
+        .db
+        .begin()
+        .await
+        .map_err(|e| ErrorInternalServerError(e))?;
+
+    sqlx::query!("DELETE FROM event")
+        .execute(&mut txn)
+        .await
+        .map_err(|e| ErrorInternalServerError(e))?;
+
+    sqlx::query!("DELETE FROM color")
+        .execute(&mut txn)
+        .await
+        .map_err(|e| ErrorInternalServerError(e))?;
+
+    sqlx::query!("DELETE FROM cycle_state")
+        .execute(&mut txn)
+        .await
+        .map_err(|e| ErrorInternalServerError(e))?;
+
+    txn.commit()
+        .await
+        .map_err(|e| ErrorInternalServerError(e))?;
+
+    Ok("OK")
+}
+
 async fn prepare_db() -> anyhow::Result<DbPool> {
     let dbpath = std::env::var("DATABASE_URL").context("Env DATABASE_URL is not set")?;
     let opt = SqliteConnectOptions::from_str(&dbpath)?.create_if_missing(true);
@@ -258,6 +288,7 @@ async fn main() -> anyhow::Result<()> {
             .service(event_handler)
             .service(init_handler)
             .service(at_handler)
+            .service(reset_handler)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
