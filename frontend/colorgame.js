@@ -3,8 +3,22 @@ import { DateTime } from 'luxon';
 //const rounds = [10, 8, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4, 3.5, 3];
 const rounds = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
 
-// TODO make this a parameter?
-const gameStart = DateTime.fromISO("2022-07-27T01:08:30+03:00");
+const query = new URLSearchParams(window.location.search);
+const gameStartStr = query.get("start");
+
+if (gameStartStr === null) {
+  alert("start parameter missing");
+  throw new Error("start parameter missing")
+}
+
+const gameStart = DateTime.fromISO(gameStartStr);
+
+if (!gameStart.isValid) {
+  console.log(gameStart)
+  alert("Invalid start parameter value");
+  throw new Error("Invalid start parameter value")
+}
+
 let currentRound = 0;
 const roundEnds = [];
 
@@ -75,26 +89,7 @@ async function load_state() {
   }
 }
 
-function create_barcodes(n = 1) {
-  for (let i = 0; i < n; i++) {
-    console.log(i);
-    fetch('http://localhost:8000/init', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        "barcode": (i + 1).toString(),
-        "timestamp": "2022-07-11T18:15:00.00Z",
-        "color": "blue"
-
-      })
-    })
-      .then(res => console.log(res));
-  }
-}
-
-function update_timer() {
+function updateTimer() {
   const currentRoundEnd = roundEnds[currentRound];
   if (DateTime.now() > currentRoundEnd) {
     currentRound++;
@@ -104,12 +99,12 @@ function update_timer() {
   }
 }
 
-function zahrajKola(zoznam) {
+function zahrajNahravky(zoznam) {
   if (zoznam.length == 0)
     return;
   var audio = new Audio('audio/' + zoznam[0] + '.mp3');
   audio.onended = function () {
-    zahrajKola(zoznam.slice(1, undefined));
+    zahrajNahravky(zoznam.slice(1, undefined));
   };
   audio.play();
 }
@@ -124,7 +119,7 @@ function zahlasKolo(x) {
   }
 
   finalnyZoznam.push("kolo");
-  zahrajKola(finalnyZoznam);
+  zahrajNahravky(finalnyZoznam);
 }
 
 function spustiKolo(x) {
@@ -145,14 +140,9 @@ function spustiKolo(x) {
     document.getElementById("as_img").src = "";
 }
 
-load_state().then(empty => {
-  if (empty) {
-    create_barcodes(48);
-    load_state()
-  }
-})
+load_state();
 
 spustiKolo(currentRound);
 
-var timeUpdater = setInterval(update_timer, 100);
+var timeUpdater = setInterval(updateTimer, 100);
 var stateUpdater = setInterval(load_state, 1000);
