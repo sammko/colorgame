@@ -1,0 +1,191 @@
+{
+  "db": "SQLite",
+  "037d14fa8c4a2396fac0790ee2c7eb83af1278081aca53a01a9383e445a7240f": {
+    "describe": {
+      "columns": [
+        {
+          "name": "barcode",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "color",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "WITH s\n     AS (SELECT barcode,\n                newcolor,\n                timestamp,\n                ROW_NUMBER()\n                  OVER (\n                    partition BY barcode\n                    ORDER BY timestamp DESC ) AS rank\n         FROM   event\n         WHERE  timestamp <= ?1\n    )\nSELECT barcode,\n       newcolor as color\nFROM   s\nWHERE  rank = 1;"
+  },
+  "0a44a1ce03e72bed3917acee6e41c5bd338d5a3c44361f45f4afd225dddeb09b": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "DELETE FROM color"
+  },
+  "2b6f2b1d58d82234b030cbebd5b4c6e63c6c9564084876718fefa0a6cdf68e82": {
+    "describe": {
+      "columns": [
+        {
+          "name": "color",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "station",
+          "ordinal": 1,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false,
+        true
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT color,station FROM color WHERE barcode=?1"
+  },
+  "3f199ca8ea898ed392ff0ad2ef0596555e72c42ec76a015fdd265f473c796f79": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 3
+      }
+    },
+    "query": "INSERT INTO color (barcode, station, color) VALUES (?1, ?2, ?3) ON CONFLICT(barcode) DO UPDATE SET color=excluded.color, station=excluded.station"
+  },
+  "5b3db475133409cf0ca86c9daf7a62993ecf0ee157c9baa30c39e0d3371d91ec": {
+    "describe": {
+      "columns": [
+        {
+          "name": "last_index",
+          "ordinal": 0,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT last_index FROM cycle_state WHERE station=?1"
+  },
+  "638e2b798055f3ace24e0d586f703154be1e3983f4a45e659a5ae93039217e73": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "INSERT INTO color (barcode, color) VALUES (?1, ?2)"
+  },
+  "86b0b21461c353044956955191daed4d47f502946b33959b1b6f98d607efa067": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 3
+      }
+    },
+    "query": "INSERT INTO event (barcode, timestamp, newcolor) VALUES (?1, ?2, ?3)"
+  },
+  "b7f391b59f984ac79d2cacbee4f640d8640e616368642f833391db5c450a2d63": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "DELETE FROM cycle_state"
+  },
+  "be97a1e30f85969a3d24b01d8e3ab8879bc24eaed0ca0defcc60ad5a95d5da78": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 4
+      }
+    },
+    "query": "INSERT INTO event (barcode, station, timestamp, newcolor) VALUES (?1, ?2, ?3, ?4)"
+  },
+  "c0a9ab5688bcf70e79a7a6db562b6ea0a7ec5af637388833211c7768ae2fe342": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "DELETE FROM event"
+  },
+  "c6d3aa8fcafac38bd257613a878d8a9d9083d9be3435c668c2f576eaea98817f": {
+    "describe": {
+      "columns": [
+        {
+          "name": "barcode",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "color",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT barcode,color FROM color"
+  },
+  "c85dff8a704a371bde82195823c5e40654fd8b09958b08d93a21065e0abaabfc": {
+    "describe": {
+      "columns": [
+        {
+          "name": "x",
+          "ordinal": 0,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT 1 as x FROM color WHERE barcode=?1"
+  },
+  "dc94efec5c231a62505554bee52c1a20cbfcc2016c2c0d5570888ec50a47d5b8": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "INSERT INTO cycle_state (station, last_index) VALUES (?1, ?2) ON CONFLICT(station) DO UPDATE SET last_index=excluded.last_index"
+  }
+}
