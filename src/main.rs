@@ -268,7 +268,7 @@ struct Config {
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
-    dotenv::dotenv()?;
+    dotenv::dotenv().ok();
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     let config: Config = serde_json::from_str(
@@ -290,7 +290,7 @@ async fn main() -> anyhow::Result<()> {
             .service(at_handler)
             .service(reset_handler)
     })
-    .bind(("127.0.0.1", 8000))?
+    .bind(("0.0.0.0", 8000))?
     .run()
     .await?;
     state2.db.close().await;

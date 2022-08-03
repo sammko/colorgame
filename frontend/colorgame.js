@@ -68,7 +68,7 @@ function clear_tables() {
 }
 
 async function load_state() {
-  const response = await fetch("http://localhost:8000/current");
+  const response = await fetch("https://colorgame.fly.dev/current");
   if (!response.ok) {
     throw new Error(`Error fetching current state: ${response.status} - ${response.statusText}`)
   } else {

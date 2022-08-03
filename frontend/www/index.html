@@ -10,16 +10,17 @@
 
 <body>
     <button id="btn_now">Reset and Start now!</button>
+    <a href="stations.html">Go to Station</a>
     <script>
         async function reset_state() {
-            await fetch("http://localhost:8000/reset", {
+            await fetch("https://colorgame.fly.dev/reset", {
                 method: "POST",
             })
         }
 
         async function create_barcodes(now, n = 1) {
             for (let i = 0; i < n; i++) {
-                await fetch('http://localhost:8000/init', {
+                await fetch('https://colorgame.fly.dev/init', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -40,7 +41,7 @@
             await reset_state();
             await create_barcodes(now, 48);
 
-            let url = new URL("/colorgame.html", window.location);
+            let url = new URL("colorgame.html", window.location);
             url.search = new URLSearchParams({ start: now });
 
             window.location.href = url.toString();
