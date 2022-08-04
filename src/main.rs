@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{
     migrate,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
-    Pool, Sqlite,
+    Pool, Sqlite, Transaction,
 };
 use std::{collections::HashMap, str::FromStr};
 
@@ -86,18 +86,9 @@ async fn at_handler(
     Ok(web::Json(evmap))
 }
 
-#[post("/init")]
-async fn init_handler(state: web::Data<State>, init: web::Json<Init>) -> Result<impl Responder> {
-    info!("Creating barcode {}", &init.barcode);
-
-    let mut txn = state
-        .db
-        .begin()
-        .await
-        .map_err(|e| ErrorInternalServerError(e))?;
-
+async fn init_one(txn: &mut Transaction<'_, Sqlite>, init: &Init) -> Result<()> {
     if let Some(_) = sqlx::query!("SELECT 1 as x FROM color WHERE barcode=?1", init.barcode)
-        .fetch_optional(&mut txn)
+        .fetch_optional(&mut *txn)
         .await
         .map_err(|e| ErrorInternalServerError(e))?
     {
@@ -110,7 +101,7 @@ async fn init_handler(state: web::Data<State>, init: web::Json<Init>) -> Result<
         init.timestamp,
         init.color
     )
-    .execute(&mut txn)
+    .execute(&mut *txn)
     .await
     .map_err(|e| ErrorInternalServerError(e))?;
 
@@ -119,9 +110,47 @@ async fn init_handler(state: web::Data<State>, init: web::Json<Init>) -> Result<
         init.barcode,
         init.color
     )
-    .execute(&mut txn)
+    .execute(&mut *txn)
     .await
     .map_err(|e| ErrorInternalServerError(e))?;
+
+    Ok(())
+}
+
+#[post("/init")]
+async fn init_handler(state: web::Data<State>, init: web::Json<Init>) -> Result<impl Responder> {
+    info!("Creating barcode {}", &init.barcode);
+
+    let mut txn = state
+        .db
+        .begin()
+        .await
+        .map_err(|e| ErrorInternalServerError(e))?;
+
+    init_one(&mut txn, &init.0).await?;
+
+    txn.commit()
+        .await
+        .map_err(|e| ErrorInternalServerError(e))?;
+
+    Ok("OK")
+}
+
+#[post("/init_many")]
+async fn init_many_handler(
+    state: web::Data<State>,
+    inits: web::Json<Vec<Init>>,
+) -> Result<impl Responder> {
+    let mut txn = state
+        .db
+        .begin()
+        .await
+        .map_err(|e| ErrorInternalServerError(e))?;
+
+    for init in inits.0 {
+        info!("Creating barcode {}", &init.barcode);
+        init_one(&mut txn, &init).await?;
+    }
 
     txn.commit()
         .await
@@ -287,6 +316,7 @@ async fn main() -> anyhow::Result<()> {
             .service(current_handler)
             .service(event_handler)
             .service(init_handler)
+            .service(init_many_handler)
             .service(at_handler)
             .service(reset_handler)
     })

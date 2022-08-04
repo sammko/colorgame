@@ -19,20 +19,22 @@
         }
 
         async function create_barcodes(now, n = 1) {
+            let players = [];
             for (let i = 0; i < n; i++) {
-                await fetch('https://colorgame.fly.dev/init', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        "barcode": (i + 1).toString(),
-                        "timestamp": now,
-                        "color": "blue"
-
-                    })
-                });
+                players.push(
+                    {
+                        "barcode": i.toString(),
+                        "color": "red",
+                        "timestamp": now
+                    });
             }
+            await fetch('https://colorgame.fly.dev/init_many', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(players)
+            });
         }
 
         async function start_now() {
