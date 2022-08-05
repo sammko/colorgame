@@ -1,31 +1,38 @@
 use actix_cors::Cors;
 use actix_web::{
-    error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound, Result},
+    dev::ServiceRequest,
+    error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound, ErrorUnauthorized, Result},
     get,
     middleware::Logger,
     post, web, App, HttpServer, Responder,
 };
+use actix_web_httpauth::{extractors::bearer::BearerAuth, middleware::HttpAuthentication};
 use anyhow::Context;
 use chrono::{DateTime, Utc};
-use log::info;
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use sqlx::{
     migrate,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     Pool, Sqlite, Transaction,
 };
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, env, str::FromStr};
 
 type DbPool = Pool<Sqlite>;
 
 struct State {
     db: DbPool,
     config: Config,
+    token: Option<String>,
 }
 
 impl State {
-    fn new(pool: DbPool, config: Config) -> Self {
-        State { db: pool, config }
+    fn new(pool: DbPool, config: Config, token: Option<String>) -> Self {
+        State {
+            db: pool,
+            config,
+            token,
+        }
     }
 }
 
@@ -295,6 +302,22 @@ struct Config {
     stations: HashMap<i64, StationDefinition>,
 }
 
+async fn auth_validator(
+    req: ServiceRequest,
+    credentials: BearerAuth,
+) -> std::result::Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
+    if let Some(state) = req.app_data::<web::Data<State>>() {
+        if let Some(required_token) = &state.token {
+            if credentials.token() == required_token {
+                return Ok(req);
+            } else {
+                return Err((ErrorUnauthorized("Bad token"), req));
+            }
+        }
+    }
+    Ok(req)
+}
+
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
@@ -305,13 +328,24 @@ async fn main() -> anyhow::Result<()> {
     )?;
 
     let pool = prepare_db().await?;
-    let state = web::Data::new(State::new(pool, config));
+
+    let auth_token = env::var("COLORGAME_AUTH").ok();
+
+    if auth_token.is_some() {
+        info!("Authorization configured")
+    } else {
+        warn!("Running without authorization!")
+    }
+
+    let state = web::Data::new(State::new(pool, config, auth_token));
     let state2 = state.clone();
     HttpServer::new(move || {
+        let auth = HttpAuthentication::bearer(auth_validator);
         App::new()
+            .app_data(state.clone())
             .wrap(Logger::default())
             .wrap(Cors::permissive())
-            .app_data(state.clone())
+            .wrap(auth)
             .service(events_handler)
             .service(current_handler)
             .service(event_handler)
