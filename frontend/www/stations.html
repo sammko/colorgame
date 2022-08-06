@@ -1,78 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Stations</title>
-    <link rel="icon" href="icon.png">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <meta charset="UTF-8">
+  <title>Stations</title>
+  <link rel="icon" href="icon.png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
 </head>
+
 <body>
   <div id="whole_page" onclick="setFocusToInput()">
-      <nav id="nav">Choose station: <br></nav>
-      <p id="cur_station">
-        <script>
-          const params = new URLSearchParams(window.location.search);
-          document.getElementById("cur_station").innerHTML = "Current station id : " + params.get("station_id")
-          if(params.get("station_id") !== null)
-          {
-            document.getElementById("nav").style.visibility = "hidden";
-          }
-          else
-          {
-            document.getElementById("nav").style.visibility = "visible";
-          }
-        </script>
-      </p>
-
-      <input id="barcode_input" type="text">
-
-      <p id="status">Status : </p>
-
+    <nav id="nav">Choose station: <br></nav>
+    <p id="cur_station">
       <script>
-
-
-        let input = document.getElementById("barcode_input")
-        input.focus();
-        input.addEventListener("keypress",
-                function (event)
-                {
-                    if(event.key === "Enter")
-                    {
-                        fetch('https://colorgame.fly.dev/event', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                "station": parseInt(params.get("station_id")),
-                                "barcode": input.value
-                            })
-                        }).then((res) =>
-                        {
-                            console.log(res);
-                            if(res.ok)
-                            {
-                                document.getElementById("status").innerHTML = "Status : OK";
-                                var audio = new Audio('audio/correct.wav');
-                                audio.play();
-                            }
-                            else
-                            {
-                                document.getElementById("status").innerHTML = "Status : Not OK";
-                                var audio = new Audio('audio/incorrect.wav');
-                                audio.play();
-                            }
-                        });
-                        input.value = "";
-                    }
-                });
-
-        function setFocusToInput()
-        {
-            document.getElementById("barcode_input").focus();
+        const params = new URLSearchParams(window.location.search);
+        document.getElementById("cur_station").innerHTML = "Current station id : " + params.get("station_id")
+        if (params.get("station_id") !== null) {
+          document.getElementById("nav").style.visibility = "hidden";
+        }
+        else {
+          document.getElementById("nav").style.visibility = "visible";
         }
       </script>
+    </p>
+
+    <input id="barcode_input" type="text">
+
+    <p id="status">Status : </p>
+
+    <script>
+
+
+      let input = document.getElementById("barcode_input")
+      input.focus();
+      input.addEventListener("keypress",
+        function (event) {
+          if (event.key === "Enter") {
+            fetch('https://colorgame.fly.dev/event', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem("token")
+              },
+              body: JSON.stringify({
+                "station": parseInt(params.get("station_id")),
+                "barcode": input.value
+              })
+            }).then((res) => {
+              console.log(res);
+              if (res.ok) {
+                document.getElementById("status").innerHTML = "Status : OK";
+                var audio = new Audio('audio/correct.wav');
+                audio.play();
+              }
+              else {
+                document.getElementById("status").innerHTML = "Status : Not OK";
+                var audio = new Audio('audio/incorrect.wav');
+                audio.play();
+              }
+            });
+            input.value = "";
+          }
+        });
+
+      function setFocusToInput() {
+        document.getElementById("barcode_input").focus();
+      }
+    </script>
   </div>
 
 </body>
@@ -81,38 +77,33 @@
   const num_stations = 8;
 
   const $e = (elName, elClass, elParent) => {
-    let e = document.createElement (elName);
-    if (elClass) e.classList.add (elClass);
-    if (elParent) elParent.appendChild (e);
+    let e = document.createElement(elName);
+    if (elClass) e.classList.add(elClass);
+    if (elParent) elParent.appendChild(e);
     return e;
   }
 
-  for(let i=1; i<num_stations; i++)
-  {
+  for (let i = 1; i < num_stations; i++) {
     let nav = document.getElementById("nav");
 
 
     let option = $e('a', 'station_option', nav);
     option.innerHTML = i;
-    option.href = "?station_id="+i
+    option.href = "?station_id=" + i
   }
 
 </script>
 
 <style>
-
-  #whole_page
-  {
-      height: 100vh;
+  #whole_page {
+    height: 100vh;
   }
 
-  .station_option
-  {
+  .station_option {
     width: 4vh;
     height: 2.5vh;
     margin: 3vh;
   }
-
 </style>
 
 </html>

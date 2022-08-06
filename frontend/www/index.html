@@ -11,10 +11,23 @@
 <body>
     <button id="btn_now">Reset and Start now!</button>
     <a href="stations.html">Go to Station</a>
+    <hr>
+    <form action="javascript:settoken()">
+        <input id="token_input" type="text"></input>
+        <button type="submit">Set Token</button>
+        <span id="token_label"></span>
+    </form>
     <script>
+        function get_headers() {
+            return {
+                "Authorization": "Bearer " + localStorage.getItem("token"),
+            };
+        }
+
         async function reset_state() {
             await fetch("https://colorgame.fly.dev/reset", {
                 method: "POST",
+                headers: get_headers()
             })
         }
 
@@ -31,7 +44,8 @@
             await fetch('https://colorgame.fly.dev/init_many', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    ...get_headers()
                 },
                 body: JSON.stringify(players)
             });
@@ -49,6 +63,13 @@
             window.location.href = url.toString();
         }
 
+        function settoken() {
+            const token = document.getElementById("token_input").value;
+            localStorage.setItem("token", token);
+            document.getElementById("token_label").innerHTML = "Set!"
+        }
+
+        document.getElementById("token_label").innerHTML = (localStorage.getItem("token") === null) ? "Not set" : "Already set";
         document.getElementById("btn_now").onclick = start_now
     </script>
 </body>
