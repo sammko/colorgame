@@ -3,7 +3,7 @@ use actix_web::{
     dev::ServiceRequest,
     error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound, ErrorUnauthorized, Result},
     get,
-    middleware::Logger,
+    middleware::{Condition, Logger},
     post, web, App, HttpServer, Responder,
 };
 use actix_web_httpauth::{extractors::bearer::BearerAuth, middleware::HttpAuthentication};
@@ -314,8 +314,9 @@ async fn auth_validator(
                 return Err((ErrorUnauthorized("Bad token"), req));
             }
         }
+        unreachable!()
     }
-    Ok(req)
+    unreachable!()
 }
 
 #[actix_web::main]
@@ -330,8 +331,9 @@ async fn main() -> anyhow::Result<()> {
     let pool = prepare_db().await?;
 
     let auth_token = env::var("COLORGAME_AUTH").ok();
+    let have_auth = auth_token.is_some();
 
-    if auth_token.is_some() {
+    if have_auth {
         info!("Authorization configured")
     } else {
         warn!("Running without authorization!")
@@ -345,7 +347,7 @@ async fn main() -> anyhow::Result<()> {
             .app_data(state.clone())
             .wrap(Logger::default())
             .wrap(Cors::permissive())
-            .wrap(auth)
+            .wrap(Condition::new(have_auth, auth))
             .service(events_handler)
             .service(current_handler)
             .service(event_handler)
