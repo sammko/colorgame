@@ -33,11 +33,13 @@
 
         async function create_barcodes(now, n = 1) {
             let players = [];
+            let player_colors = ["green", "cyan", "blue", "magenta", "red", "white"];
+
             for (let i = 0; i < n; i++) {
                 players.push(
                     {
-                        "barcode": (i + 1).toString(),
-                        "color": "red",
+                        "barcode": (i + 101).toString(),
+                        "color": player_colors[parseInt(i/(n/player_colors.length))],
                         "timestamp": now
                     });
             }
