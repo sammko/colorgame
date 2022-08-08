@@ -40,7 +40,7 @@ const assignments =
   1: ["Farby dúhy", "červená, žltá, zelená, modrá", "1.jpg"],
   2: ["Farby CMYK", "žltá, tyrkysová, magenta, čierna", ""],
   3: ["Farby listov na jeseň", "zelená, červená, žltá, magenta", "3.jpg"],
-  4: ["Farby tričiek vedúcich na tejto hre", "TODO", ""],
+  4: ["Farby tričiek vedúcich na tejto hre", "", ""],
   5: ["Farby RGB", "červená, zelená, modrá", "5.jpg"],
   6: ["Šachovnica", "čierna, biela", "6.jpg"],
   7: ["Také farby ako má Viki na ponožkách " +
