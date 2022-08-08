@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon';
 
-//const rounds = [10, 8, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4, 3.5, 3];
-const rounds = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
+const rounds = [10, 8, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4, 3.5, 3];
+//const rounds = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
 
 const query = new URLSearchParams(window.location.search);
 const gameStartStr = query.get("start");
@@ -80,7 +80,7 @@ async function load_state() {
     clear_tables();
     let empty = true;
     for (const [key, value] of Object.entries(data)) {
-      let table = document.getElementById("barcode-colors-table" + (parseInt((key - 1) / 8 + 1)).toString());
+      let table = document.getElementById("barcode-colors-table" + (parseInt((key - 101) / 8 + 1)).toString());
       let row = $e('tr', '', table.firstChild);
       let bar = $e('td', 'barcode', row);
       bar.innerHTML = key;
