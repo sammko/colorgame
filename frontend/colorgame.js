@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon';
 
-const rounds = [10, 8, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4, 3.5, 3];
-//const rounds = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
+//const rounds = [10, 8, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4, 3.5, 3];
+const rounds = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2];
 
 const query = new URLSearchParams(window.location.search);
 const gameStartStr = query.get("start");
@@ -44,7 +44,7 @@ const assignments =
   5: ["Farby RGB", "červená, zelená, modrá", "5.jpg"],
   6: ["Šachovnica", "čierna, biela", "6.jpg"],
   7: ["Také farby ako má Viki na ponožkách " +
-    "a Hovorca na tričku", "tyrkysová, magenta", ""],
+    "a Hovorca na tričku", "", ""],
   8: ["Každý člen družinky má inú farbu", "", ""],
   9: ["Farby slovenskej vlajky", "biela, modrá, červená", "9.jpg"],
   10: ["Farby Linux loga", "čierna, biela, žltá", "10.jpg"],
